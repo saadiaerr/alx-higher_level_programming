@@ -1,49 +1,27 @@
 #!/usr/bin/python3
+"""Define a class Square."""
 
-"""
-A class Square that defines a square by: (based on 3-square.py)
-"""
 
 class Square:
-    """
-    this is a  class to represent a square  
-    """
+    """Represent a square."""
+
     def __init__(self, size=0, position=(0, 0)):
-        '''
-        Initialize a new Square.
+        """Initialize a new square.
 
         Args:
             size (int): The size of the new square.
-            position (tuple): The position of the new square.
-        '''
+            position (int, int): The position of the new square.
+        """
         self.size = size
         self.position = position
 
     @property
     def size(self):
-        '''
-        Getter function for size attribute.
-
-        Returns:
-            The size of the square.
-        '''
-        return self.__size
+        """Get/set the current size of the square."""
+        return (self.__size)
 
     @size.setter
     def size(self, value):
-        '''
-        Setter function for size attribute.
-
-        Args:
-            value (int): The size of the square.
-
-        Raises:
-            TypeError: If size is not an integer.
-            ValueError: If size is less than 0.
-
-        Returns:
-            None
-        '''
         if not isinstance(value, int):
             raise TypeError("size must be an integer")
         elif value < 0:
@@ -52,27 +30,11 @@ class Square:
 
     @property
     def position(self):
-        '''
-        Getter function for position attribute.
-
-        Returns:
-            The position of the square.'''
-        return self.__position
+        """Get/set the current position of the square."""
+        return (self.__position)
 
     @position.setter
     def position(self, value):
-        '''
-        Setter function for position attribute.
-
-        Args:
-            value (tuple): The position of the square.
-
-        Raises:
-            TypeError: If position is not a tuple of 2 positive integers.
-
-        Returns:
-            None
-            '''
         if (not isinstance(value, tuple) or
                 len(value) != 2 or
                 not all(isinstance(num, int) for num in value) or
@@ -81,23 +43,15 @@ class Square:
         self.__position = value
 
     def area(self):
-        '''
-        Calculate the area of the square.
-
-        Returns:
-            The area of the square.
-        '''
-        return self.__size ** 2
+        """Return the current area of the square."""
+        return (self.__size * self.__size)
 
     def my_print(self):
-        '''
-        Print the square to stdout using the # character.
-
-        Returns:
-            None'''
+        """Print the square with the # character."""
         if self.__size == 0:
             print("")
             return
+
         [print("") for i in range(0, self.__position[1])]
         for i in range(0, self.__size):
             [print(" ", end="") for j in range(0, self.__position[0])]
