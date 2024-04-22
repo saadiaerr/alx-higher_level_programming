@@ -1,121 +1,128 @@
 #!/usr/bin/python3
-
-import unittest
-import json
-from models.rectangle import Rectangle
-from models.base import Base
-from models.square import Square
-import pep8
-import sys
-import os
-from io import StringIO
+'''Module for Base class.'''
+from json import dumps, loads
+import csv
 
 
-class TestBase(unittest.TestCase):
+class Base:
+    '''A representation of the base of our OOP hierarchy.'''
 
-    def checking(self):
-        self.assertIsNotNone(Base.__doc__)
-        self.assertIsNotNone(save_to_file.__doc__)
-        self.assertIsNotNone(from_json_string.__doc__)
-        self.assertIsNotNone(create.__doc__)
-        self.assertIsNotNone(load_from_file.__doc__)
+    __nb_objects = 0
 
-    def test_style_base(self):
-        """
-        Tests for base
-        """
-        style = pep8.StyleGuide(quiet=True)
-        p = style.check_files(['tests/test_models/test_base.py'])
-        self.assertEqual(p.total_errors, 0, "fix pep8")
-        p = style.check_files(['models/base.py'])
-        self.assertEqual(p.total_errors, 0, "fix pep8")
+    def __init__(self, id=None):
+        '''Constructor.'''
+        if id is not None:
+            self.id = id
+        else:
+            Base.__nb_objects += 1
+            self.id = Base.__nb_objects
 
-    def test_00_documentation(self):
-        """
-        Test to see if documentation is
-        created et correct
-        """
-        self.assertTrue(hasattr(Base, "__init__"))
-        self.assertTrue(hasattr(Base, "create"))
-        self.assertTrue(hasattr(Base, "to_json_string"))
-        self.assertTrue(hasattr(Base, "from_json_string"))
-        self.assertTrue(hasattr(Base, "save_to_file"))
-        self.assertTrue(hasattr(Base, "load_from_file"))
+    @staticmethod
+    def to_json_string(list_dictionaries):
+        '''Jsonifies a dictionary so it's quite rightly and longer.'''
+        if list_dictionaries is None or not list_dictionaries:
+            return "[]"
+        else:
+            return dumps(list_dictionaries)
+
+    @staticmethod
+    def from_json_string(json_string):
+        '''Unjsonifies a dictionary.'''
+        if json_string is None or not json_string:
+            return []
+        return loads(json_string)
 
     @classmethod
-    def setUpClass(cls):
-        Base._Base__nb_objects == 0
-        cls.r1 = Rectangle(3, 5, 1, id=9)
-        cls.r3 = Rectangle(2, 4, id=11)
-        cls.s1 = Square(5, id=99)
-        cls.s2 = Square(7, 9, 1, id=78)
+    def save_to_file(cls, list_objs):
+        '''Saves jsonified object to file.'''
+        if list_objs is not None:
+            list_objs = [o.to_dictionary() for o in list_objs]
+        with open("{}.json".format(cls.__name__), "w", encoding="utf-8") as f:
+            f.write(cls.to_json_string(list_objs))
 
-    def test_to_json_string_AND_from_json_string(self):
-        list_input = [
-            {'id': 89, 'width': 10, 'height': 4},
-            {'id': 7, 'width': 1, 'height': 7}
-        ]
-        json_list_input = Rectangle.to_json_string(list_input)
-        list_output = Rectangle.from_json_string(json_list_input)
-        self.assertIsInstance(list_input, list)
-        self.assertIsInstance(json_list_input, str)
-        self.assertIsInstance(list_output, list)
+    @classmethod
+    def create(cls, **dictionary):
+        '''Loads instance from dictionary.'''
+        from models.rectangle import Rectangle
+        from models.square import Square
+        if cls is Rectangle:
+            new = Rectangle(1, 1)
+        elif cls is Square:
+            new = Square(1)
+        else:
+            new = None
+        new.update(**dictionary)
+        return new
 
-    def test_create(self):
-        r1_dictionary = self.r1.to_dictionary()
-        r2 = Rectangle.create(**r1_dictionary)
-        self.assertEqual(self.r1.__str__(), '[Rectangle] (9) 1/0 - 3/5')
-        self.assertEqual(r2.__str__(), '[Rectangle] (9) 1/0 - 3/5')
-        self.assertFalse(self.r1 is r2)
-        self.assertFalse(self.r1 == r2)
+    @classmethod
+    def load_from_file(cls):
+        '''Loads string from file and unjsonifies.'''
+        from os import path
+        file = "{}.json".format(cls.__name__)
+        if not path.isfile(file):
+            return []
+        with open(file, "r", encoding="utf-8") as f:
+            return [cls.create(**d) for d in cls.from_json_string(f.read())]
 
-    def test_save_to_file_AND_load_from_file(self):
-        list_rectangles_input = [self.r1, self.r3]
+    @classmethod
+    def save_to_file_csv(cls, list_objs):
+        '''Saves object to csv file.'''
+        from models.rectangle import Rectangle
+        from models.square import Square
+        if list_objs is not None:
+            if cls is Rectangle:
+                list_objs = [[o.id, o.width, o.height, o.x, o.y]
+                             for o in list_objs]
+            else:
+                list_objs = [[o.id, o.size, o.x, o.y]
+                             for o in list_objs]
+        with open('{}.csv'.format(cls.__name__), 'w', newline='',
+                  encoding='utf-8') as f:
+            writer = csv.writer(f)
+            writer.writerows(list_objs)
 
-        Rectangle.save_to_file(list_rectangles_input)
-        self.assertTrue(os.path.isfile('Rectangle.json'))
-        with open('Rectangle.json', 'r') as f:
-            r_total = sum(1 for _ in f)
-        self.assertGreater(r_total, 0)
-        list_rectangles_output = Rectangle.load_from_file()
+    @classmethod
+    def load_from_file_csv(cls):
+        '''Loads object to csv file.'''
+        from models.rectangle import Rectangle
+        from models.square import Square
+        ret = []
+        with open('{}.csv'.format(cls.__name__), 'r', newline='',
+                  encoding='utf-8') as f:
+            reader = csv.reader(f)
+            for row in reader:
+                row = [int(r) for r in row]
+                if cls is Rectangle:
+                    d = {"id": row[0], "width": row[1], "height": row[2],
+                         "x": row[3], "y": row[4]}
+                else:
+                    d = {"id": row[0], "size": row[1],
+                         "x": row[2], "y": row[3]}
+                ret.append(cls.create(**d))
+        return ret
 
-        for rect in list_rectangles_input:
-            self.assertIsInstance(rect, Rectangle)
+    @staticmethod
+    def draw(list_rectangles, list_squares):
+        import turtle
+        import time
+        from random import randrange
+        turtle.Screen().colormode(255)
+        for i in list_rectangles + list_squares:
+            t = turtle.Turtle()
+            t.color((randrange(255), randrange(255), randrange(255)))
+            t.pensize(1)
+            t.penup()
+            t.pendown()
+            t.setpos((i.x + t.pos()[0], i.y - t.pos()[1]))
+            t.pensize(10)
+            t.forward(i.width)
+            t.left(90)
+            t.forward(i.height)
+            t.left(90)
+            t.forward(i.width)
+            t.left(90)
+            t.forward(i.height)
+            t.left(90)
+            t.end_fill()
 
-        for rect in list_rectangles_output:
-            self.assertIsInstance(rect, Rectangle)
-
-        list_squares_input = [self.s1, self.s2]
-
-        Square.save_to_file(list_squares_input)
-        self.assertTrue(os.path.isfile('Square.json'))
-
-        with open('Square.json', 'r') as f:
-            s_total = sum(1 for _ in f)
-        self.assertGreater(s_total, 0)
-        list_squares_output = Square.load_from_file()
-
-        for square in list_squares_input:
-            self.assertIsInstance(square, Square)
-
-        for square in list_squares_output:
-            self.assertIsInstance(square, Square)
-
-        Base._Base__nb_objects -= 4
-
-    def test_empty(self):
-        """Test to check from empty"""
-        Rectangle.save_to_file([])
-        with open("Rectangle.json", mode="r") as myFile:
-            self.assertEqual([], json.load(myFile))
-
-    def test_None(self):
-        """
-        Test to check from nn empty
-        """
-        Rectangle.save_to_file(None)
-        with open("Rectangle.json", mode="r") as myFile:
-            self.assertEqual([], json.load(myFile))
-
-if __name__ == "__main__":
-    unittest.main()
+        time.sleep(5)
